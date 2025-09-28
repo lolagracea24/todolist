@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Todo List</title>
+
+    <!-- Bootstrap v5.3 CDN -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <!-- SortableJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <style>
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .todo-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .todo-header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        border-radius: 20px 20px 0 0;
+        padding: 2rem;
+        text-align: center;
+      }
+
+      .todo-header h1 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 2.5rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .todo-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+
+      .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        border-color: #4facfe;
+        box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+      }
+
+      .btn-add {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+      }
+
+      .btn-edit {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.4rem 0.6rem;
+        color: #8b4513;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(252, 182, 159, 0.3);
+        margin-right: 0.5rem;
+      }
+
+      .btn-edit:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 15px rgba(252, 182, 159, 0.5);
+        color: #8b4513;
+      }
+
+      .todo-item {
+        border: none;
+        border-radius: 15px;
+        margin-bottom: 0.75rem;
+        padding: 1rem;
+        background: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        border-left: 4px solid #4facfe;
+        cursor: move;
+        position: relative;
+      }
+
+      .todo-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .todo-item.completed {
+        background: #f8f9fa;
+        border-left-color: #28a745;
+        opacity: 0.8;
+      }
+
+      .todo-item.completed .todo-text {
+        text-decoration: line-through;
+        color: #6c757d;
+      }
+
+      .todo-item.sortable-ghost {
+        opacity: 0.4;
+        transform: rotate(2deg);
+      }
+
+      .todo-item.sortable-chosen {
+        transform: scale(1.02);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .drag-handle {
+        position: absolute;
+        left: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #ccc;
+        cursor: move;
+        font-size: 1.2rem;
+      }
+
+      .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-top: 0.125rem;
+      }
+
+      .form-check-input:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+      }
+
+      .todo-text {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-left: 2rem;
+        transition: all 0.3s ease;
+        word-break: break-word;
+      }
+
+      .todo-text.editing {
+        display: none;
+      }
+
+      .edit-input {
+        display: none;
+        margin-left: 2rem;
+      }
+
+      .edit-input.active {
+        display: block;
+      }
+
+      .btn-delete {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 0.5rem 0.75rem;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+      }
+
+      .btn-delete:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.5);
+        background: linear-gradient(135deg, #ee5a52 0%, #ff6b6b 100%);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6c757d;
+      }
+
+      .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+
+      .stats {
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 15px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
+
+      .stats .stat-item {
+        display: inline-block;
+        margin: 0 1rem;
+      }
+
+      .stats .stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #4facfe;
+      }
+
+      .stats .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .controls {
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 15px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .filter-btn {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        background: white;
+        color: #6c757d;
+        transition: all 0.3s ease;
+      }
+
+      .filter-btn.active {
+        border-color: #4facfe;
+        background: #4facfe;
+        color: white;
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+      }
+
+      .search-container {
+        position: relative;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+      }
+
+      .search-input {
+        padding-left: 3rem;
+      }
+
+      .validation-error {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+      }
+
+      .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+      }
+
+      .edit-buttons {
+        display: none;
+      }
+
+      .edit-buttons.active {
+        display: inline-block;
+      }
+
+      .btn-save {
+        background: #28a745;
+        border: none;
+        border-radius: 8px;
+        padding: 0.4rem 0.6rem;
+        color: white;
+        transition: all 0.3s ease;
+        margin-right: 0.5rem;
+      }
+
+      .btn-cancel {
+        background: #6c757d;
+        border: none;
+        border-radius: 8px;
+        padding: 0.4rem 0.6rem;
+        color: white;
+        transition: all 0.3s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-10 col-md-12">
+          <div class="todo-container">
+            <!-- Header -->
+            <div class="todo-header">
+              <h1><i class="bi bi-list-check"></i> Todo List</h1>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4">
+              <!-- Stats -->
+              <div class="stats" id="stats">
+                <div class="stat-item">
+                  <div class="stat-number" id="totalTasks">0</div>
+                  <div class="stat-label">Total Tasks</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number" id="completedTasks">0</div>
+                  <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number" id="pendingTasks">0</div>
+                  <div class="stat-label">Pending</div>
+                </div>
+              </div>
+
+              <!-- Form -->
+              <form id="formData" class="mb-4">
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="todo"
+                    id="todoInput"
+                    placeholder="Apa rencana kamu selanjutnya?"
+                    autocomplete="off"
+                  />
+                  <button type="submit" class="btn btn-primary btn-add">
+                    <i class="bi bi-plus-circle"></i> Tambah Task
+                  </button>
+                </div>
+                <div
+                  id="errorMessage"
+                  class="error-message"
+                  style="display: none"
+                ></div>
+              </form>
+
+              <!-- Controls -->
+              <div class="controls">
+                <div class="row align-items-center">
+                  <div class="col-md-6 mb-2 mb-md-0">
+                    <div class="btn-group" role="group">
+                      <button
+                        type="button"
+                        class="btn filter-btn active"
+                        data-filter="all"
+                      >
+                        <i class="bi bi-list"></i> Semua
+                      </button>
+                      <button
+                        type="button"
+                        class="btn filter-btn"
+                        data-filter="pending"
+                      >
+                        <i class="bi bi-clock"></i> Belum Selesai
+                      </button>
+                      <button
+                        type="button"
+                        class="btn filter-btn"
+                        data-filter="completed"
+                      >
+                        <i class="bi bi-check-circle"></i> Selesai
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="search-container">
+                      <i class="bi bi-search search-icon"></i>
+                      <input
+                        type="text"
+                        class="form-control search-input"
+                        id="searchInput"
+                        placeholder="Cari task..."
+                        autocomplete="off"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Todo List -->
+              <div id="todoList">
+                <!-- Todo items will be rendered here -->
+              </div>
+
+              <!-- Empty State -->
+              <div id="emptyState" class="empty-state" style="display: none">
+                <i class="bi bi-clipboard-check"></i>
+                <h4>Tidak ada task ditemukan</h4>
+                <p id="emptyStateText">
+                  Mulai tambahkan task pertamamu untuk mengorganisir aktivitas
+                  harian!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let todos = [];
+      let currentFilter = "all";
+      let currentSearch = "";
+      let editingId = null;
+
+      function generateId() {
+        return Date.now() + Math.random().toString(36).substr(2, 9);
+      }
+
+      function updateStats() {
+        const filteredTodos = getFilteredTodos();
+        const total = todos.length;
+        const completed = todos.filter((todo) => todo.completed).length;
+        const pending = total - completed;
+
+        document.getElementById("totalTasks").textContent = total;
+        document.getElementById("completedTasks").textContent = completed;
+        document.getElementById("pendingTasks").textContent = pending;
+      }
+
+      function getFilteredTodos() {
+        let filtered = todos;
+
+        // Apply filter
+        if (currentFilter === "completed") {
+          filtered = filtered.filter((todo) => todo.completed);
+        } else if (currentFilter === "pending") {
+          filtered = filtered.filter((todo) => !todo.completed);
+        }
+
+        // Apply search
+        if (currentSearch.trim()) {
+          filtered = filtered.filter((todo) =>
+            todo.text.toLowerCase().includes(currentSearch.toLowerCase())
+          );
+        }
+
+        return filtered;
+      }
+
+      function renderTodos() {
+        const todoList = document.getElementById("todoList");
+        const emptyState = document.getElementById("emptyState");
+        const emptyStateText = document.getElementById("emptyStateText");
+
+        todoList.innerHTML = "";
+        const filteredTodos = getFilteredTodos();
+
+        if (filteredTodos.length === 0) {
+          emptyState.style.display = "block";
+          if (currentSearch.trim()) {
+            emptyStateText.textContent = `Tidak ditemukan task yang mengandung "${currentSearch}"`;
+          } else if (currentFilter === "completed") {
+            emptyStateText.textContent = "Belum ada task yang selesai";
+          } else if (currentFilter === "pending") {
+            emptyStateText.textContent = "Tidak ada task yang belum selesai";
+          } else {
+            emptyStateText.textContent =
+              "Mulai tambahkan task pertamamu untuk mengorganisir aktivitas harian!";
+          }
+          updateStats();
+          return;
+        }
+
+        emptyState.style.display = "none";
+
+        filteredTodos.forEach((item) => {
+          const todoItem = document.createElement("div");
+          todoItem.className = `todo-item d-flex align-items-center ${
+            item.completed ? "completed" : ""
+          }`;
+          todoItem.setAttribute("data-id", item.id);
+
+          // Drag handle
+          const dragHandle = document.createElement("i");
+          dragHandle.className = "bi bi-grip-vertical drag-handle";
+
+          const checkboxContainer = document.createElement("div");
+          checkboxContainer.className = "form-check";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "form-check-input";
+          checkbox.checked = item.completed;
+          checkbox.addEventListener("change", () => {
+            item.completed = checkbox.checked;
+            renderTodos();
+            saveTodos();
+          });
+
+          checkboxContainer.appendChild(checkbox);
+
+          const textContainer = document.createElement("div");
+          textContainer.className = "flex-fill d-flex align-items-center";
+
+          const label = document.createElement("label");
+          label.className = "form-check-label todo-text flex-fill";
+          label.textContent = item.text;
+          label.setAttribute("data-id", item.id);
+
+          // Edit input (hidden by default)
+          const editInput = document.createElement("input");
+          editInput.type = "text";
+          editInput.className = "form-control edit-input";
+          editInput.value = item.text;
+
+          textContainer.appendChild(checkboxContainer);
+          textContainer.appendChild(label);
+          textContainer.appendChild(editInput);
+
+          const buttonContainer = document.createElement("div");
+          buttonContainer.className = "d-flex align-items-center";
+
+          // Edit button
+          const editButton = document.createElement("button");
+          editButton.className = "btn btn-edit btn-sm";
+          editButton.innerHTML = '<i class="bi bi-pencil"></i>';
+          editButton.addEventListener("click", () => startEdit(item.id));
+
+          // Save and Cancel buttons (hidden by default)
+          const editButtonsContainer = document.createElement("div");
+          editButtonsContainer.className = "edit-buttons";
+
+          const saveButton = document.createElement("button");
+          saveButton.className = "btn btn-save btn-sm";
+          saveButton.innerHTML = '<i class="bi bi-check"></i>';
+          saveButton.addEventListener("click", () => saveEdit(item.id));
+
+          const cancelButton = document.createElement("button");
+          cancelButton.className = "btn btn-cancel btn-sm";
+          cancelButton.innerHTML = '<i class="bi bi-x"></i>';
+          cancelButton.addEventListener("click", () => cancelEdit());
+
+          editButtonsContainer.appendChild(saveButton);
+          editButtonsContainer.appendChild(cancelButton);
+
+          // Delete button
+          const deleteButton = document.createElement("button");
+          deleteButton.className = "btn btn-delete btn-sm";
+          deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+          deleteButton.addEventListener("click", () => {
+            if (confirm("Apakah kamu yakin ingin menghapus task ini?")) {
+              todos = todos.filter((todo) => todo.id !== item.id);
+              renderTodos();
+              saveTodos();
+            }
+          });
+
+          buttonContainer.appendChild(editButton);
+          buttonContainer.appendChild(editButtonsContainer);
+          buttonContainer.appendChild(deleteButton);
+
+          todoItem.appendChild(dragHandle);
+          todoItem.appendChild(textContainer);
+          todoItem.appendChild(buttonContainer);
+          todoList.appendChild(todoItem);
+        });
+
+        updateStats();
+        initializeSortable();
+      }
+
+      function startEdit(id) {
+        if (editingId !== null) {
+          cancelEdit();
+        }
+
+        editingId = id;
+        const todoItem = document.querySelector(`[data-id="${id}"]`);
+        const label = todoItem.querySelector(".todo-text");
+        const editInput = todoItem.querySelector(".edit-input");
+        const editButton = todoItem.querySelector(".btn-edit");
+        const editButtons = todoItem.querySelector(".edit-buttons");
+
+        label.classList.add("editing");
+        editInput.classList.add("active");
+        editButton.style.display = "none";
+        editButtons.classList.add("active");
+        editInput.focus();
+        editInput.select();
+      }
+
+      function saveEdit(id) {
+        const todoItem = document.querySelector(`[data-id="${id}"]`);
+        const editInput = todoItem.querySelector(".edit-input");
+        const newText = editInput.value.trim();
+
+        if (newText === "") {
+          showError("Task tidak boleh kosong!");
+          return;
+        }
+
+        // Check for duplicates (excluding current item)
+        const isDuplicate = todos.some(
+          (todo) =>
+            todo.text.toLowerCase() === newText.toLowerCase() && todo.id !== id
+        );
+
+        if (isDuplicate) {
+          showError("Task dengan judul ini sudah ada!");
+          editInput.focus();
+          editInput.select();
+          return;
+        }
+
+        // Update the todo
+        const todo = todos.find((todo) => todo.id === id);
+        todo.text = newText;
+
+        cancelEdit();
+        renderTodos();
+        saveTodos();
+        hideError();
+      }
+
+      function cancelEdit() {
+        if (editingId === null) return;
+
+        const todoItem = document.querySelector(`[data-id="${editingId}"]`);
+        const label = todoItem.querySelector(".todo-text");
+        const editInput = todoItem.querySelector(".edit-input");
+        const editButton = todoItem.querySelector(".btn-edit");
+        const editButtons = todoItem.querySelector(".edit-buttons");
+
+        // Reset the input value
+        const todo = todos.find((todo) => todo.id === editingId);
+        editInput.value = todo.text;
+
+        label.classList.remove("editing");
+        editInput.classList.remove("active");
+        editButton.style.display = "inline-block";
+        editButtons.classList.remove("active");
+
+        editingId = null;
+        hideError();
+      }
+
+      function initializeSortable() {
+        const todoList = document.getElementById("todoList");
+        if (todoList.children.length > 0) {
+          new Sortable(todoList, {
+            animation: 150,
+            ghostClass: "sortable-ghost",
+            chosenClass: "sortable-chosen",
+            handle: ".drag-handle",
+            onEnd: function (evt) {
+              const filteredTodos = getFilteredTodos();
+              const movedItem = filteredTodos[evt.oldIndex];
+
+              // Remove from old position
+              filteredTodos.splice(evt.oldIndex, 1);
+              // Insert at new position
+              filteredTodos.splice(evt.newIndex, 0, movedItem);
+
+              // Update the main todos array with new order
+              // This is a simplified approach - in a real app you'd want more sophisticated ordering
+              updateTodoOrder(filteredTodos);
+              saveTodos();
+            },
+          });
+        }
+      }
+
+      function updateTodoOrder(newOrder) {
+        // Simple approach: assign order values based on position
+        newOrder.forEach((todo, index) => {
+          const originalTodo = todos.find((t) => t.id === todo.id);
+          originalTodo.order = index;
+        });
+
+        // Sort todos array by order
+        todos.sort((a, b) => (a.order || 0) - (b.order || 0));
+      }
+
+      function showError(message) {
+        const errorElement = document.getElementById("errorMessage");
+        const inputElement = document.getElementById("todoInput");
+
+        errorElement.textContent = message;
+        errorElement.style.display = "block";
+        inputElement.classList.add("validation-error");
+      }
+
+      function hideError() {
+        const errorElement = document.getElementById("errorMessage");
+        const inputElement = document.getElementById("todoInput");
+
+        errorElement.style.display = "none";
+        inputElement.classList.remove("validation-error");
+      }
+
+      function saveTodos() {
+        try {
+          // Store todos in localStorage as JS variables (not actual localStorage)
+          const todosData = JSON.stringify(todos);
+          console.log("Saving todos:", todosData);
+        } catch (error) {
+          console.warn("Could not save todos:", error);
+        }
+      }
+
+      function loadTodos() {
+        try {
+          // In a real environment, this would load from localStorage
+          // For now, we'll start with empty array
+          todos = [];
+        } catch (error) {
+          console.warn("Could not load todos:", error);
+          todos = [];
+        }
+      }
+
+      // Event Listeners
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("formData");
+        const searchInput = document.getElementById("searchInput");
+        const filterButtons = document.querySelectorAll(".filter-btn");
+
+        loadTodos();
+
+        // Form submission
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          const todoInput = form.todo.value.trim();
+
+          if (todoInput === "") {
+            showError("Task tidak boleh kosong!");
+            return;
+          }
+
+          // Check for duplicates
+          const isDuplicate = todos.some(
+            (todo) => todo.text.toLowerCase() === todoInput.toLowerCase()
+          );
+
+          if (isDuplicate) {
+            showError("Task dengan judul ini sudah ada!");
+            return;
+          }
+
+          // Add new todo
+          const newTodo = {
+            id: generateId(),
+            text: todoInput,
+            completed: false,
+            createdAt: new Date().toISOString(),
+            order: todos.length,
+          };
+
+          todos.unshift(newTodo);
+
+          form.todo.value = "";
+          hideError();
+          renderTodos();
+          saveTodos();
+        });
+
+        // Search functionality
+        searchInput.addEventListener("input", function () {
+          currentSearch = this.value;
+          renderTodos();
+        });
+
+        // Filter functionality
+        filterButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            // Remove active class from all buttons
+            filterButtons.forEach((btn) => btn.classList.remove("active"));
+            // Add active class to clicked button
+            this.classList.add("active");
+
+            currentFilter = this.getAttribute("data-filter");
+            renderTodos();
+          });
+        });
+
+        // Hide error when typing
+        document
+          .getElementById("todoInput")
+          .addEventListener("input", function () {
+            if (this.value.trim()) {
+              hideError();
+            }
+          });
+
+        renderTodos();
+      });
+
+      // Auto-save periodically
+      setInterval(saveTodos, 30000);
+    </script>
+  </body>
+</html>
